@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>org.evans.FileExplorer</id>
+  <name>File Explorer</name>
+  <summary>Tabbed Python file explorer with preview and advanced actions</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <launchable type="desktop-id">org.evans.FileExplorer.desktop</launchable>
+  <provides>
+    <binary>org.evans.FileExplorer</binary>
+  </provides>
+  <description>
+    <p>
+      A Python file explorer with tabs, themed UI, search, preview panel,
+      favorites, partitions list, and advanced context actions.
+    </p>
+  </description>
+  <developer id="org.evans">
+    <name>Evans</name>
+  </developer>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="1.0.0" date="2026-02-25"/>
+  </releases>
+</component>

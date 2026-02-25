@@ -1,0 +1,28 @@
+app-id: org.evans.FileExplorer
+runtime: org.gnome.Platform
+runtime-version: "48"
+sdk: org.gnome.Sdk
+command: org.evans.FileExplorer
+finish-args:
+  - --share=ipc
+  - --socket=wayland
+  - --socket=x11
+  - --talk-name=org.freedesktop.FileManager1
+  - --filesystem=host
+
+modules:
+  - name: file-explorer
+    buildsystem: simple
+    build-commands:
+      - install -Dm755 run-file-explorer.sh /app/bin/org.evans.FileExplorer
+      - install -Dm644 main.py /app/share/org.evans.FileExplorer/main.py
+      - install -Dm644 ui.py /app/share/org.evans.FileExplorer/ui.py
+      - install -Dm644 models.py /app/share/org.evans.FileExplorer/models.py
+      - install -Dm644 file_ops.py /app/share/org.evans.FileExplorer/file_ops.py
+      - install -Dm644 settings.py /app/share/org.evans.FileExplorer/settings.py
+      - install -Dm644 org.evans.FileExplorer.desktop /app/share/applications/org.evans.FileExplorer.desktop
+      - install -Dm644 org.evans.FileExplorer.metainfo.xml /app/share/metainfo/org.evans.FileExplorer.metainfo.xml
+      - install -Dm644 org.evans.FileExplorer.svg /app/share/icons/hicolor/scalable/apps/org.evans.FileExplorer.svg
+    sources:
+      - type: dir
+        path: .
