@@ -18,6 +18,7 @@
   <developer id="org.evans">
     <name>Evans</name>
   </developer>
+  <url type="homepage">https://github.com/EvansOgala/file-explorer</url>
   <content_rating type="oars-1.1"/>
   <releases>
     <release version="1.0.0" date="2026-02-25"/>

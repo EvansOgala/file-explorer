@@ -1,5 +1,4 @@
 import argparse
-import tkinter as tk
 from pathlib import Path
 
 from ui import FileExplorerApp
@@ -16,9 +15,8 @@ def main():
         if candidate.is_dir():
             start_path = candidate
 
-    root = tk.Tk()
-    FileExplorerApp(root, start_path=start_path)
-    root.mainloop()
+    app = FileExplorerApp(start_path=start_path)
+    app.run(None)
 
 
 if __name__ == "__main__":
