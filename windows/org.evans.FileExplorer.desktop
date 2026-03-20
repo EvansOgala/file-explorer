@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=File Explorer
+Comment=Tabbed Python file explorer
+Exec=org.evans.FileExplorer
+Icon=org.evans.FileExplorer
+Terminal=false
+Categories=Utility;FileManager;
+StartupNotify=true
