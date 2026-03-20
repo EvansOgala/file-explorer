@@ -1,6 +1,6 @@
 # File Explorer
 
-GTK4 file explorer with partitions view, context actions, and root-open helper.
+Desktop file explorer with favorites, search, preview, and file operations.
 
 ## Features
 
@@ -9,17 +9,25 @@ GTK4 file explorer with partitions view, context actions, and root-open helper.
 - Search and sorting controls
 - Create, rename, move, copy, and delete actions
 - Right-click context menu
-- "Open as Root" action for protected paths
 - Persisted last-opened path
+- Linux: GTK4 UI
+- Windows: PySide6 UI with drive list
 
 ## Dependencies
 
 ### Runtime
 
 - Python 3.11+
+
+Linux UI stack:
+
 - GTK4 + PyGObject
 - `xdg-utils` for opening files/URIs
 - Optional: `pkexec` (`polkit`) for root-open action
+
+Windows UI stack:
+
+- PySide6 (Qt)
 
 ### Install dependencies by distro
 
@@ -44,9 +52,19 @@ sudo dnf install -y python3 python3-gobject gtk4 xdg-utils polkit
 
 ## Run from source
 
+### Linux
+
 ```bash
 cd /home/'your username'/Documents/file-explorer
 python3 main.py
+```
+
+### Windows
+
+```powershell
+cd C:\Users\your-username\Documents\file-explorer
+py -m pip install PySide6
+py main.py
 ```
 
 ## Build AppImage
@@ -71,3 +89,12 @@ chmod +x build-appimage.sh
 ```
 
 The script outputs an `.AppImage` file in the project root.
+
+## Build Windows (PyInstaller)
+
+```powershell
+cd C:\Users\your-username\Documents\file-explorer
+build-windows.bat
+```
+
+The executable is emitted into `dist\FileExplorer\`.
