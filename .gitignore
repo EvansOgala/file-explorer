@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+
+build/
+dist/
+AppDir/
+pkg/
+src/
+.flatpak-build/
+.flatpak-repo/
+*.AppImage
+*.flatpak
+*.pkg.tar.zst
+*.pkg.tar.zst.sig
+build-appimage.last.log
