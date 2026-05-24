@@ -1,17 +1,26 @@
 pkgname=file-explorer-git
-pkgver=0.r0.g0000000
+pkgver=0.r9.g187b355
 pkgrel=1
 pkgdesc="GTK4 file explorer with favorites, search, preview, and file operations"
-arch=('any')
+arch=('x86_64')
 url="https://github.com/EvansOgala/file-explorer"
 license=('MIT')
 depends=(
+  'glibc'
+  'xdg-utils'
+)
+makedepends=(
+  'git'
   'python'
   'python-gobject'
   'gtk4'
-  'xdg-utils'
 )
-makedepends=('git')
+optdepends=(
+  'polkit: root-open support through pkexec'
+)
+provides=('file-explorer')
+conflicts=('file-explorer')
+options=('!strip' '!debug')
 source=("$pkgname::git+https://github.com/EvansOgala/file-explorer.git")
 sha256sums=('SKIP')
 
@@ -22,21 +31,27 @@ pkgver() {
     "$(git rev-parse --short HEAD)"
 }
 
+build() {
+  cd "$srcdir/$pkgname"
+  python -c 'import PyInstaller' || {
+    echo "PyInstaller is required. Install it before building this package." >&2
+    return 1
+  }
+  python -m PyInstaller FileExplorer.spec --noconfirm --clean
+}
+
 package() {
   cd "$srcdir/$pkgname"
 
-  install -d "$pkgdir/usr/lib/file-explorer"
-  install -Dm644 main.py "$pkgdir/usr/lib/file-explorer/main.py"
-  install -Dm644 ui.py "$pkgdir/usr/lib/file-explorer/ui.py"
-  install -Dm644 gtk_style.py "$pkgdir/usr/lib/file-explorer/gtk_style.py"
-  install -Dm644 settings.py "$pkgdir/usr/lib/file-explorer/settings.py"
-  install -Dm644 models.py "$pkgdir/usr/lib/file-explorer/models.py"
-  install -Dm644 file_ops.py "$pkgdir/usr/lib/file-explorer/file_ops.py"
+  local bundle_dir="$srcdir/$pkgname/dist/FileExplorer"
+  if [[ ! -x "$bundle_dir/FileExplorer" ]]; then
+    echo "Missing PyInstaller bundle: build() did not create dist/FileExplorer." >&2
+    return 1
+  fi
 
-  install -Dm755 /dev/stdin "$pkgdir/usr/bin/org.evans.FileExplorer" <<'LAUNCHER'
-#!/bin/sh
-exec /usr/bin/python3 /usr/lib/file-explorer/main.py "$@"
-LAUNCHER
+  install -d "$pkgdir/opt/file-explorer" "$pkgdir/usr/bin"
+  cp -a "$bundle_dir/." "$pkgdir/opt/file-explorer/"
+  ln -s /opt/file-explorer/FileExplorer "$pkgdir/usr/bin/org.evans.FileExplorer"
 
   install -Dm644 org.evans.FileExplorer.desktop \
     "$pkgdir/usr/share/applications/org.evans.FileExplorer.desktop"

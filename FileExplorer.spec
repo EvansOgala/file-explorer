@@ -8,7 +8,17 @@ a = Analysis(
     datas=[],
     hiddenimports=['gi', 'gi.overrides.Gtk', 'gi.repository.Gtk', 'gi.repository.Gio', 'gi.repository.GLib'],
     hookspath=[],
-    hooksconfig={},
+    hooksconfig={
+        'gi': {
+            'module-versions': {
+                'Gtk': '4.0',
+                'Gdk': '4.0',
+            },
+            'icons': ['Adwaita'],
+            'themes': ['Default'],
+            'languages': ['en'],
+        },
+    },
     runtime_hooks=[],
     excludes=[],
     noarchive=False,
