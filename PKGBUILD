@@ -7,7 +7,7 @@ url="https://github.com/EvansOgala/file-explorer"
 license=('MIT')
 depends=(
   'python'
-  'python-pyside6'
+  'pyside6'
   'xdg-utils'
 )
 makedepends=('git')
