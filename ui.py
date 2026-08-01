@@ -17,7 +17,7 @@ from gi.repository import Gdk, GLib, Gtk
 from file_ops import FileOpError, copy_path, create_file, create_folder, delete_path, move_path, rename_path
 from models import Entry, filter_entries, get_linux_partitions, human_size, scan_directory, sort_entries
 from settings import load_settings, save_settings
-from gtk_style import install_material_smooth_css
+#from gtk_style import install_material_smooth_css
 
 
 class FileExplorerApp(Gtk.Application):
@@ -64,7 +64,7 @@ class FileExplorerApp(Gtk.Application):
         self.window = Gtk.ApplicationWindow(application=self)
         self.window.set_title("File Explorer")
         self.window.set_default_size(1280, 840)
-        self.css_provider = install_material_smooth_css(self.window)
+        #self.css_provider = install_material_smooth_css(self.window)
 
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         root.set_margin_top(12)

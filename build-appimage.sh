@@ -53,11 +53,11 @@ python3 -m PyInstaller \
   --windowed \
   --onedir \
   --name "$APP_NAME" \
-  --hidden-import=gi \
-  --hidden-import=gi.overrides.Gtk \
-  --hidden-import=gi.repository.Gtk \
-  --hidden-import=gi.repository.Gio \
-  --hidden-import=gi.repository.GLib \
+  --hidden-import=pyside_ui \
+  --hidden-import=PySide6 \
+  --hidden-import=PySide6.QtCore \
+  --hidden-import=PySide6.QtGui \
+  --hidden-import=PySide6.QtWidgets \
   "$ENTRY"
 
 mkdir -p "$APPDIR/usr/bin"

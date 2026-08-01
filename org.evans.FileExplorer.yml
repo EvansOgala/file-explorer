@@ -1,7 +1,7 @@
 app-id: org.evans.FileExplorer
-runtime: org.gnome.Platform
-runtime-version: "48"
-sdk: org.gnome.Sdk
+runtime: org.kde.Platform
+runtime-version: "6.8"
+sdk: org.kde.Sdk
 command: org.evans.FileExplorer
 finish-args:
   - --share=ipc
@@ -16,7 +16,7 @@ modules:
     build-commands:
       - install -Dm755 run-file-explorer.sh /app/bin/org.evans.FileExplorer
       - install -Dm644 main.py /app/share/org.evans.FileExplorer/main.py
-      - install -Dm644 ui.py /app/share/org.evans.FileExplorer/ui.py
+      - install -Dm644 pyside_ui.py /app/share/org.evans.FileExplorer/pyside_ui.py
       - install -Dm644 models.py /app/share/org.evans.FileExplorer/models.py
       - install -Dm644 file_ops.py /app/share/org.evans.FileExplorer/file_ops.py
       - install -Dm644 settings.py /app/share/org.evans.FileExplorer/settings.py

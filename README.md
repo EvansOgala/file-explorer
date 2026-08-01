@@ -10,8 +10,7 @@ Desktop file explorer with favorites, search, preview, and file operations.
 - Create, rename, move, copy, and delete actions
 - Right-click context menu
 - Persisted last-opened path
-- Linux: GTK4 UI
-- Windows: PySide6 UI with drive list
+- Cross-platform Qt (PySide6) interface with favorites, locations/drives, and file operations
 
 ## Dependencies
 
@@ -19,9 +18,9 @@ Desktop file explorer with favorites, search, preview, and file operations.
 
 - Python 3.11+
 
-Linux UI stack:
+UI stack:
 
-- GTK4 + PyGObject
+- PySide6 (Qt)
 - `xdg-utils` for opening files/URIs
 - Optional: `pkexec` (`polkit`) for root-open action
 
@@ -34,25 +33,25 @@ Windows UI stack:
 #### Arch Linux / Nyarch
 
 ```bash
-sudo pacman -S --needed python python-gobject gtk4 xdg-utils polkit
+sudo pacman -S --needed python python-pyside6 xdg-utils polkit
 ```
 
 #### Debian / Ubuntu
 
 ```bash
 sudo apt update
-sudo apt install -y python3 python3-gi gir1.2-gtk-4.0 xdg-utils policykit-1
+sudo apt install -y python3-pyside6.qtwidgets xdg-utils policykit-1
 ```
 
 #### Fedora
 
 ```bash
-sudo dnf install -y python3 python3-gobject gtk4 xdg-utils polkit
+sudo dnf install -y python3-pyside6 xdg-utils polkit
 ```
 
 ## Run from source
 
-### Linux
+### Linux / Windows
 
 ```bash
 cd /home/'your username'/Documents/file-explorer
@@ -63,7 +62,7 @@ python3 main.py
 
 ```powershell
 cd C:\Users\your-username\Documents\file-explorer
-py -m pip install PySide6
+python3 -m pip install PySide6  # if your distribution does not package it
 py main.py
 ```
 

@@ -1,7 +1,12 @@
 import json
+import os
 from pathlib import Path
 
-APP_DIR = Path.home() / ".config" / "py_file_explorer"
+if os.name == "nt":
+    _base = Path(os.getenv("APPDATA") or (Path.home() / "AppData" / "Roaming"))
+    APP_DIR = _base / "py_file_explorer"
+else:
+    APP_DIR = Path.home() / ".config" / "py_file_explorer"
 SETTINGS_PATH = APP_DIR / "settings.json"
 
 DEFAULT_SETTINGS = {

@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 
-from ui import FileExplorerApp
+from pyside_ui import FileExplorerQtApp
 
 
 def main():
@@ -15,8 +15,7 @@ def main():
         if candidate.is_dir():
             start_path = candidate
 
-    app = FileExplorerApp(start_path=start_path)
-    app.run(None)
+    FileExplorerQtApp.run_app(start_path=start_path)
 
 
 if __name__ == "__main__":

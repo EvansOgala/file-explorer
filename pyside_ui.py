@@ -1,89 +1,48 @@
 from __future__ import annotations
 
 import os
+import shutil
+import stat
 import string
+import subprocess
+import sys
 from datetime import datetime
 from pathlib import Path
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from file_ops import FileOpError, copy_path, create_file, create_folder, delete_path, move_path, rename_path
-from models import Entry, filter_entries, human_size, scan_directory, sort_entries
+from models import Entry, filter_entries, get_linux_partitions, human_size, scan_directory, sort_entries
 from settings import load_settings, save_settings
 
 _LIGHT_QSS = """
-QWidget {
-  font-family: "Segoe UI Variable", "Segoe UI", "Inter", sans-serif;
-  font-size: 13px;
-  color: #1c2433;
-}
-QMainWindow { background: #eef2f7; }
-QGroupBox {
-  background: #ffffff;
-  border: 1px solid rgba(27, 39, 64, 0.12);
-  border-radius: 12px;
-  margin-top: 10px;
-  padding: 12px;
-}
-QGroupBox::title {
-  subcontrol-origin: margin;
-  left: 10px;
-  padding: 0 6px 0 6px;
-  color: #1c2433;
-  font-weight: 600;
-}
-QLineEdit, QComboBox, QTextEdit, QListWidget {
-  border: 1px solid rgba(27, 39, 64, 0.14);
-  border-radius: 10px;
-  padding: 7px 10px;
-  background: #ffffff;
-}
-QPushButton {
-  border-radius: 18px;
-  padding: 7px 14px;
-  background: #2b7cff;
-  color: white;
-  font-weight: 600;
-}
-QPushButton:disabled { background: rgba(120, 140, 170, 0.5); }
+QWidget { font-family: "Inter", "Segoe UI", sans-serif; font-size: 13px; color: #20252b; }
+QMainWindow, #content { background: #f4f5f6; }
+#sidebar { background: #fdfdfd; border-right: 1px solid #d9dde1; }
+#brand { font-size: 20px; font-weight: 700; padding: 8px 10px; }
+#pageTitle { font-size: 25px; font-weight: 700; } #subtitle, #status { color: #687078; }
+QGroupBox { background: #fff; border: 1px solid #d5dade; border-radius: 7px; margin-top: 10px; padding: 12px; font-weight: 600; }
+QGroupBox::title { subcontrol-origin: margin; left: 8px; padding: 0 5px; }
+QLineEdit, QComboBox, QTextEdit, QListWidget { background: #fff; border: 1px solid #c9ced3; border-radius: 5px; padding: 7px 9px; }
+QPushButton { background: #e6e8ea; border: 1px solid #c7cdd1; border-radius: 5px; padding: 8px 12px; font-weight: 600; }
+QPushButton:hover { background: #dce0e3; } QPushButton#accent { background: #e00000; border-color: #e00000; color: white; } QPushButton#accent:hover { background: #c90000; }
+QListWidget::item { padding: 8px; border-radius: 4px; } QListWidget::item:selected { background: #df0000; color: white; }
 """
 
 _DARK_QSS = """
-QWidget {
-  font-family: "Segoe UI Variable", "Segoe UI", "Inter", sans-serif;
-  font-size: 13px;
-  color: #e6e9f2;
-}
-QMainWindow { background: #1b1f2a; }
-QGroupBox {
-  background: #232a36;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  margin-top: 10px;
-  padding: 12px;
-}
-QGroupBox::title {
-  subcontrol-origin: margin;
-  left: 10px;
-  padding: 0 6px 0 6px;
-  color: #e6e9f2;
-  font-weight: 600;
-}
-QLineEdit, QComboBox, QTextEdit, QListWidget {
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 10px;
-  padding: 7px 10px;
-  background: #1f2430;
-  color: #e6e9f2;
-}
-QPushButton {
-  border-radius: 18px;
-  padding: 7px 14px;
-  background: #3f7bff;
-  color: white;
-  font-weight: 600;
-}
-QPushButton:disabled { background: rgba(120, 140, 170, 0.45); }
+QWidget { font-family: "Inter", "Segoe UI", sans-serif; font-size: 13px; color: #e6e8eb; }
+QMainWindow, #content { background: #202427; }
+#sidebar { background: #15191b; border-right: 1px solid #343a3d; }
+#brand { font-size: 20px; font-weight: 700; padding: 8px 10px; }
+#pageTitle { font-size: 25px; font-weight: 700; } #subtitle, #status { color: #9ca3a9; }
+QGroupBox { background: #15191b; border: 1px solid #343a3d; border-radius: 6px; margin-top: 10px; padding: 12px; font-weight: 600; }
+QGroupBox::title { subcontrol-origin: margin; left: 8px; padding: 0 5px; }
+QLineEdit, QComboBox, QTextEdit, QListWidget { background: #111518; border: 1px solid #343a3d; border-radius: 5px; padding: 7px 9px; color: #e6e8eb; selection-background-color: #3673db; }
+QPushButton { background: #111518; border: 1px solid #343a3d; border-radius: 5px; padding: 8px 12px; color: #e6e8eb; font-weight: 600; }
+QPushButton:hover { background: #242a2e; } QPushButton#accent { background: #e00000; border-color: #e00000; color: white; } QPushButton#accent:hover { background: #c90000; }
+QListWidget::item { padding: 8px; border-radius: 4px; } QListWidget::item:hover { background: #242a2e; } QListWidget::item:selected { background: #3673db; color: white; }
+QCheckBox::indicator { width: 15px; height: 15px; border: 1px solid #4a5156; background: #111518; } QCheckBox::indicator:checked { background: #e00000; border-color: #e00000; }
+QScrollBar:vertical { background: #15191b; width: 10px; margin: 2px; } QScrollBar::handle:vertical { background: #4b5358; min-height: 24px; border-radius: 4px; }
 """
 
 
@@ -109,47 +68,19 @@ class FileExplorerQtWindow(QtWidgets.QMainWindow):
     def _build_ui(self):
         root = QtWidgets.QWidget()
         self.setCentralWidget(root)
-        outer = QtWidgets.QVBoxLayout(root)
-        outer.setContentsMargins(18, 18, 18, 18)
-        outer.setSpacing(10)
+        shell = QtWidgets.QHBoxLayout(root)
+        shell.setContentsMargins(0, 0, 0, 0)
+        shell.setSpacing(0)
 
-        self.title_label = QtWidgets.QLabel("File Explorer")
-        self.title_label.setStyleSheet("font-size: 26px; font-weight: 700;")
-        self.subtitle_label = QtWidgets.QLabel("Windows-ready explorer with favorites, drives, and file operations")
-        outer.addWidget(self.title_label)
-        outer.addWidget(self.subtitle_label)
-
-        nav = QtWidgets.QHBoxLayout()
-        outer.addLayout(nav)
-        self.path_entry = QtWidgets.QLineEdit()
-        self.path_entry.returnPressed.connect(self._go_to_path)
-        nav.addWidget(self.path_entry, 1)
-        for text, fn in [("Go", self._go_to_path), ("Up", self._go_up), ("Refresh", self._refresh_active_list)]:
-            btn = QtWidgets.QPushButton(text)
-            btn.clicked.connect(fn)
-            nav.addWidget(btn)
-
-        controls = QtWidgets.QHBoxLayout()
-        outer.addLayout(controls)
-        controls.addWidget(QtWidgets.QLabel("Search"))
-        self.search_entry = QtWidgets.QLineEdit()
-        self.search_entry.setPlaceholderText("Filter by filename")
-        self.search_entry.textChanged.connect(self._refresh_active_list)
-        controls.addWidget(self.search_entry, 1)
-        self.hidden_check = QtWidgets.QCheckBox("Show hidden")
-        self.hidden_check.stateChanged.connect(self._on_toggle_hidden)
-        controls.addWidget(self.hidden_check)
-        controls.addWidget(QtWidgets.QLabel("Theme"))
-        self.theme_box = QtWidgets.QComboBox()
-        self.theme_box.addItems(["light", "dark"])
-        self.theme_box.currentIndexChanged.connect(self._on_theme_changed)
-        controls.addWidget(self.theme_box)
-
-        body = QtWidgets.QHBoxLayout()
-        outer.addLayout(body, 1)
-
-        sidebar = QtWidgets.QVBoxLayout()
-        body.addLayout(sidebar, 1)
+        sidebar_frame = QtWidgets.QFrame()
+        sidebar_frame.setObjectName("sidebar")
+        sidebar_frame.setFixedWidth(250)
+        sidebar = QtWidgets.QVBoxLayout(sidebar_frame)
+        sidebar.setContentsMargins(12, 16, 12, 16)
+        sidebar.setSpacing(10)
+        brand = QtWidgets.QLabel("File Explorer")
+        brand.setObjectName("brand")
+        sidebar.addWidget(brand)
 
         fav_box = QtWidgets.QGroupBox("Favorites")
         fav_layout = QtWidgets.QVBoxLayout(fav_box)
@@ -164,22 +95,70 @@ class FileExplorerQtWindow(QtWidgets.QMainWindow):
         fav_btns.addWidget(add_f)
         fav_btns.addWidget(rm_f)
         fav_layout.addLayout(fav_btns)
-        sidebar.addWidget(fav_box, 1)
+        sidebar.addWidget(fav_box, 3)
 
-        drv_box = QtWidgets.QGroupBox("Drives")
-        drv_layout = QtWidgets.QVBoxLayout(drv_box)
+        self.drives_box = QtWidgets.QGroupBox("Drives" if os.name == "nt" else "Locations")
+        drv_layout = QtWidgets.QVBoxLayout(self.drives_box)
         self.drive_list = QtWidgets.QListWidget()
         self.drive_list.itemActivated.connect(self._open_drive)
         drv_layout.addWidget(self.drive_list)
-        sidebar.addWidget(drv_box, 1)
+        sidebar.addWidget(self.drives_box, 2)
+        sidebar.addStretch(1)
+        sidebar.addWidget(QtWidgets.QLabel("Theme"))
+        self.theme_box = QtWidgets.QComboBox()
+        self.theme_box.addItems(["dark", "light"])
+        self.theme_box.currentIndexChanged.connect(self._on_theme_changed)
+        sidebar.addWidget(self.theme_box)
+        shell.addWidget(sidebar_frame)
+
+        content = QtWidgets.QWidget()
+        content.setObjectName("content")
+        outer = QtWidgets.QVBoxLayout(content)
+        outer.setContentsMargins(26, 22, 26, 18)
+        outer.setSpacing(10)
+        shell.addWidget(content, 1)
+
+        self.title_label = QtWidgets.QLabel("File Explorer")
+        self.title_label.setObjectName("pageTitle")
+        self.subtitle_label = QtWidgets.QLabel("Browse, organize, and preview your files")
+        self.subtitle_label.setObjectName("subtitle")
+        outer.addWidget(self.title_label)
+        outer.addWidget(self.subtitle_label)
+
+        nav = QtWidgets.QHBoxLayout()
+        outer.addLayout(nav)
+        self.path_entry = QtWidgets.QLineEdit()
+        self.path_entry.setPlaceholderText("Enter a folder path")
+        self.path_entry.returnPressed.connect(self._go_to_path)
+        nav.addWidget(self.path_entry, 1)
+        for text, fn in [("Go", self._go_to_path), ("Up", self._go_up), ("Refresh", self._refresh_active_list)]:
+            btn = QtWidgets.QPushButton(text)
+            btn.clicked.connect(fn)
+            if text == "Go":
+                btn.setObjectName("accent")
+            nav.addWidget(btn)
+
+        controls = QtWidgets.QHBoxLayout()
+        outer.addLayout(controls)
+        controls.addWidget(QtWidgets.QLabel("Search"))
+        self.search_entry = QtWidgets.QLineEdit()
+        self.search_entry.setPlaceholderText("Filter by filename")
+        self.search_entry.textChanged.connect(self._refresh_active_list)
+        controls.addWidget(self.search_entry, 1)
+        self.hidden_check = QtWidgets.QCheckBox("Show hidden")
+        self.hidden_check.stateChanged.connect(self._on_toggle_hidden)
+        controls.addWidget(self.hidden_check)
+        body = QtWidgets.QHBoxLayout()
+        outer.addLayout(body, 1)
 
         main = QtWidgets.QVBoxLayout()
-        body.addLayout(main, 3)
+        body.addLayout(main)
 
         ops = QtWidgets.QHBoxLayout()
         main.addLayout(ops)
         for text, fn in [
             ("Open", self._open_selected),
+            ("Open as Root", self._open_selected_as_root),
             ("New Folder", self._new_folder),
             ("New File", self._new_file),
             ("Rename", self._rename_selected),
@@ -213,12 +192,13 @@ class FileExplorerQtWindow(QtWidgets.QMainWindow):
         split.setSizes([800, 400])
 
         self.status_label = QtWidgets.QLabel("Ready")
+        self.status_label.setObjectName("status")
         outer.addWidget(self.status_label)
 
     def _apply_settings(self):
         self.hidden_check.setChecked(bool(self.settings.get("show_hidden", False)))
         theme = self.settings.get("theme", "light")
-        self.theme_box.setCurrentIndex(0 if theme == "light" else 1)
+        self.theme_box.setCurrentIndex(0 if theme == "dark" else 1)
         self._apply_theme(theme)
 
     def _apply_theme(self, theme: str):
@@ -228,15 +208,9 @@ class FileExplorerQtWindow(QtWidgets.QMainWindow):
         if theme == "dark":
             app.setStyle("Fusion")
             app.setStyleSheet(_DARK_QSS)
-            self.title_label.setStyleSheet("font-size: 26px; font-weight: 700; color: #e6e9f2;")
-            self.subtitle_label.setStyleSheet("color: rgba(230,233,242,0.72);")
-            self.status_label.setStyleSheet("color: rgba(230,233,242,0.68);")
         else:
             app.setStyle("Fusion")
             app.setStyleSheet(_LIGHT_QSS)
-            self.title_label.setStyleSheet("font-size: 26px; font-weight: 700; color: #1f2a44;")
-            self.subtitle_label.setStyleSheet("color: rgba(30,40,60,0.72);")
-            self.status_label.setStyleSheet("color: rgba(30,40,60,0.68);")
 
     def _set_status(self, text: str):
         self.status_label.setText(text)
@@ -257,14 +231,20 @@ class FileExplorerQtWindow(QtWidgets.QMainWindow):
                 if drive.exists():
                     self.drive_list.addItem(str(drive))
         else:
-            self.drive_list.addItem(str(Path("/")))
-            self.drive_list.addItem(str(Path.home()))
+            for mountpoint, device, fstype in get_linux_partitions():
+                item = QtWidgets.QListWidgetItem(f"{mountpoint}  ({device}, {fstype})")
+                item.setData(QtCore.Qt.ItemDataRole.UserRole, str(mountpoint))
+                self.drive_list.addItem(item)
+            if self.drive_list.count() == 0:
+                self.drive_list.addItem(str(Path("/")))
+                self.drive_list.addItem(str(Path.home()))
 
     def _open_favorite(self, item: QtWidgets.QListWidgetItem):
         self._load_directory(Path(item.text()))
 
     def _open_drive(self, item: QtWidgets.QListWidgetItem):
-        self._load_directory(Path(item.text()))
+        target = item.data(QtCore.Qt.ItemDataRole.UserRole) or item.text()
+        self._load_directory(Path(str(target)))
 
     def _on_theme_changed(self):
         theme = self.theme_box.currentText()
@@ -351,6 +331,7 @@ class FileExplorerQtWindow(QtWidgets.QMainWindow):
         menu = QtWidgets.QMenu(self)
         for label, callback in [
             ("Open", lambda: self._open_path(path)),
+            ("Open as Root", lambda: self._open_as_root(path)),
             ("Rename", self._rename_selected),
             ("Delete", self._delete_selected),
             ("Copy", self._copy_selected),
@@ -368,6 +349,9 @@ class FileExplorerQtWindow(QtWidgets.QMainWindow):
             return
         self._open_path(path)
 
+    def _open_selected_as_root(self):
+        self._open_as_root(self._selected_path() or self.current_path)
+
     def _open_path(self, path: Path):
         if path.is_dir():
             self._load_directory(path)
@@ -381,6 +365,32 @@ class FileExplorerQtWindow(QtWidgets.QMainWindow):
         except Exception as exc:
             self._set_status(f"Failed to open file: {exc}")
 
+    def _open_as_root(self, path: Path):
+        """Start a separate privileged Qt instance on Linux when polkit is available."""
+        if os.name == "nt":
+            self._set_status("Open as Root is available on Linux only")
+            return
+        if os.geteuid() == 0:
+            self._open_path(path)
+            return
+        if shutil.which("pkexec") is None:
+            QtWidgets.QMessageBox.warning(self, "Open as Root", "pkexec is not installed. Install polkit to use this action.")
+            return
+
+        script_dir = Path(__file__).resolve().parent
+        env_pairs = [f"PYTHONPATH={script_dir}"]
+        for key in ("DISPLAY", "WAYLAND_DISPLAY", "XAUTHORITY", "XDG_RUNTIME_DIR", "DBUS_SESSION_BUS_ADDRESS"):
+            if value := os.environ.get(key):
+                env_pairs.append(f"{key}={value}")
+        try:
+            subprocess.Popen([
+                "pkexec", "env", *env_pairs, sys.executable, str(script_dir / "main.py"),
+                "--start-path", str(path),
+            ])
+            self._set_status(f"Opened root session for: {path}")
+        except OSError as exc:
+            QtWidgets.QMessageBox.warning(self, "Open as Root", f"Could not start a root session:\n{exc}")
+
     def _preview_path(self, path: Path):
         try:
             st = path.stat()
@@ -391,6 +401,7 @@ class FileExplorerQtWindow(QtWidgets.QMainWindow):
         modified = datetime.fromtimestamp(st.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
         created = datetime.fromtimestamp(st.st_ctime).strftime("%Y-%m-%d %H:%M:%S")
         kind = "Folder" if path.is_dir() else "File"
+        permissions = stat.filemode(st.st_mode)
         size = "-" if path.is_dir() else human_size(st.st_size)
 
         header = (
@@ -398,6 +409,7 @@ class FileExplorerQtWindow(QtWidgets.QMainWindow):
             f"Path: {path}\n"
             f"Type: {kind}\n"
             f"Size: {size}\n"
+            f"Permissions: {permissions}\n"
             f"Modified: {modified}\n"
             f"Created: {created}\n"
         )
@@ -427,6 +439,7 @@ class FileExplorerQtWindow(QtWidgets.QMainWindow):
                 f"Path: {path}\n"
                 f"Type: {'Folder' if path.is_dir() else 'File'}\n"
                 f"Size: {'-' if path.is_dir() else human_size(st.st_size)}\n"
+                f"Permissions: {stat.filemode(st.st_mode)}\n"
                 f"Modified: {modified}\n"
                 f"Created: {created}"
             )
